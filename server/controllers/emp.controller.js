@@ -26,18 +26,18 @@ const register = async (req, res, next) => {
   if (password.length < minPasswordLength) {
     return next(new AppError('Password must be at least 8 characters', 400));
   }
-  // Check if a user with the same email already exists in the database using the "Emp" model.
-  const userExist = await Emp.findOne({ email });
+  // Check if a employee with the same email already exists in the database using the "Emp" model.
+  const empExist = await Emp.findOne({ email });
 
   // If a user with the same email exists, return a new instance of "AppError" with a 400 status code.
   // This will be passed to the "next()" function to handle the error.
-  if (userExist) {
+  if (empExist) {
     return next(new AppError('Email already exist', 400));
   }
 
   try {
     // Create a new employee object using the "Emp" model and provided data.
-    const emp = Emp.create({
+    const emp = await Emp.create({
       fullName,
       email,
       password,
@@ -51,13 +51,13 @@ const register = async (req, res, next) => {
     }
     // If the employee object is successfully created, proceed with the registration process.
 
-    // Save the user object to the database.
+    // Save the employee object to the database.
     await emp.save();
     // Clear the "password" field to avoid sending it in the response for security reasons.
-    user.password = undefined;
+    emp.password = undefined;
 
     // Generate a JSON Web Token (JWT) for the user using the "generateJWTToken()" method.
-    const token = await user.generateJWTToken();
+    const token = await emp.generateJWTToken();
 
     // Set the generated token as a cookie with the provided cookie options.
     res.cookie('token', token, cookieOptions);
@@ -66,7 +66,7 @@ const register = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      user: emp,
+      emp,
     });
   } catch (error) {
     return next(error);

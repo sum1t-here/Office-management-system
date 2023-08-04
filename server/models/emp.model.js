@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const empSchema = new Schema(
   {
@@ -42,7 +43,7 @@ const empSchema = new Schema(
 );
 
 // hashes password when new user is being created
-empSchema.pre('save', async function next() {
+empSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
@@ -52,6 +53,25 @@ empSchema.pre('save', async function next() {
     console.log(error);
   }
 });
+
+//generic methods
+empSchema.methods = {
+  // Will generate a JWT token with emp id as payload
+  generateJWTToken: async function () {
+    return await jwt.sign(
+      {
+        id: this._id,
+        email: this.email,
+        subscription: this.subscription,
+        role: this.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRY,
+      }
+    );
+  },
+};
 
 const Emp = model('Emp', empSchema);
 
